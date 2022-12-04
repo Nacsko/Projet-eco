@@ -1,128 +1,532 @@
-# Copyright (c) 2009-2012 Denis Bilenko. See LICENSE for details.
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-gevent is a coroutine-based Python networking library that uses greenlet
-to provide a high-level synchronous API on top of libev event loop.
+Created on Sun Dec  4 14:23:03 2022
 
-See http://www.gevent.org/ for the documentation.
-
-.. versionchanged:: 1.3a2
-   Add the `config` object.
+@author: nacim-
 """
 
-from __future__ import absolute_import
-
-from collections import namedtuple
-
-_version_info = namedtuple('version_info',
-                           ('major', 'minor', 'micro', 'releaselevel', 'serial'))
-
-#: The programatic version identifier. The fields have (roughly) the
-#: same meaning as :data:`sys.version_info`
-#: .. deprecated:: 1.2
-#:  Use ``pkg_resources.parse_version(__version__)`` (or the equivalent
-#:  ``packaging.version.Version(__version__)``).
-version_info = _version_info(20, 0, 0, 'dev', 0) # XXX: Remove me
-
-#: The human-readable PEP 440 version identifier.
-#: Use ``pkg_resources.parse_version(__version__)`` or
-#: ``packaging.version.Version(__version__)`` to get a machine-usable
-#: value.
-__version__ = '21.8.0'
+#!/usr/bin/env python
+# coding: utf-8
 
 
-__all__ = [
-    'Greenlet',
-    'GreenletExit',
-    'Timeout',
-    'config', # Added in 1.3a2
-    'fork',
-    'get_hub',
-    'getcurrent',
-    'getswitchinterval',
-    'idle',
-    'iwait',
-    'joinall',
-    'kill',
-    'killall',
-    'reinit',
-    'setswitchinterval',
-    'signal_handler',
-    'sleep',
-    'spawn',
-    'spawn_later',
-    'spawn_raw',
-    'wait',
-    'with_timeout',
-]
+# In[1]:
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data = pd.read_csv(r'/Users/nacim-/Downloads/hdvaaa.csv', sep = ",")
+
+# In[2]:
 
 
-import sys
-if sys.platform == 'win32':
-    # trigger WSAStartup call
-    import socket  # pylint:disable=unused-import,useless-suppression
-    del socket
+data_discri = data[data["DISCRI1C1"]>0]
 
-try:
-    # Floating point number, in number of seconds,
-    # like time.time
-    getswitchinterval = sys.getswitchinterval
-    setswitchinterval = sys.setswitchinterval
-except AttributeError:
-    # Running on Python 2
-    _switchinterval = 0.005
+# In[3]:
+ 
+    
 
-    def getswitchinterval():
-        return _switchinterval
+CSP = ["Subis des moqueries, des insultes","mis à l'écart","traité(é) injustement", "refusé un droit"]
+ 
+data = round((data_discri.groupby(["DISCRI1C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
 
-    def setswitchinterval(interval):
-        # Weed out None and non-numbers. This is not
-        # exactly exception compatible with the Python 3
-        # versions.
-        if interval > 0:
-            global _switchinterval
-            _switchinterval = interval
 
-from gevent._config import config
-from gevent._hub_local import get_hub
-from gevent._hub_primitives import iwait_on_objects as iwait
-from gevent._hub_primitives import wait_on_objects as wait
+# In[2]:
+ 
+    
+couleur = sns.color_palette("Paired")
 
-from gevent.greenlet import Greenlet, joinall, killall
-spawn = Greenlet.spawn
-spawn_later = Greenlet.spawn_later
-#: The singleton configuration object for gevent.
+CSP = ["Subis des moqueries, des insultes","mis à l'écart","traité(é) injustement", "refusé un droit"]
+ 
+data = round((data_discri.groupby(["DISCRI1C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
 
-from gevent.timeout import Timeout, with_timeout
-from gevent.hub import getcurrent, GreenletExit, spawn_raw, sleep, idle, kill, reinit
-try:
-    from gevent.os import fork
-except ImportError:
-    __all__.remove('fork')
 
-# This used to be available as gevent.signal; that broke in 1.1b4 but
-# a temporary alias was added (See
-# https://github.com/gevent/gevent/issues/648). It was ugly and complex and
-# caused confusion, so it was removed in 1.5. See https://github.com/gevent/gevent/issues/1529
-from gevent.hub import signal as signal_handler
 
-# the following makes hidden imports visible to freezing tools like
-# py2exe. see https://github.com/gevent/gevent/issues/181
-# This is not well maintained or tested, though, so it likely becomes
-# outdated on each major release.
 
-def __dependencies_for_freezing(): # pragma: no cover
-    # pylint:disable=unused-import, import-outside-toplevel
-    from gevent import core
-    from gevent import resolver_thread
-    from gevent import resolver_ares
-    from gevent import socket as _socket
-    from gevent import threadpool
-    from gevent import thread
-    from gevent import threading
-    from gevent import select
-    from gevent import subprocess
-    import pprint
-    import traceback
-    import signal as _signal
+# Wedge properties
+wp = { 'edgecolor' : "black" }
+# 'linewidth' : 1,
+# Creating autocpt arguments
+def func(pct, allvalues):
+    absolute = int(pct / 100.*np.sum(allvalues))
+    return "{:.1f}%\n({:d} g)".format(pct, absolute)
+ 
+# Creating plot
+fig, ax = plt.subplots(figsize =(10, 7))
+wedges, texts, autotexts = ax.pie(data,
+                                  autopct = lambda pct: func(pct, data),
+                                  shadow = True,
+                                  colors = couleur,
+                                  startangle = 90,
+                                  wedgeprops = wp)
+#,                                  textprops = dict(color ="magenta"))
+ 
+# Adding legend
+ax.legend(wedges, CSP,
+          title ="CSP",
+          loc ="center left",
+          bbox_to_anchor =(1, 0, 0.5, 1))
+ 
+plt.setp(autotexts, size = 8, weight ="bold")
+ax.set_title("Discrimination subis par rapport à l'age selon en 2003")
+ 
+# show plot
+plt.show()
+-------------------------------------------------------------------------------
+#code 2
 
-del __dependencies_for_freezing
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 17:09:27 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 14:23:03 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python
+# coding: utf-8
+
+
+# In[1]:
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data = pd.read_csv(r'/Users/nacim-/Downloads/hdvaaa.csv', sep = ",")
+
+# In[2]:
+
+
+data_discri = data[data["DFREQ1C1"]>0]
+
+# In[3]:
+ 
+    
+
+CSP = ["Une seule fois","Plusieurs fois","Continuellement"]
+ 
+data = round((data_discri.groupby(["DFREQ1C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+# In[2]:
+ 
+    
+couleur = sns.color_palette("Paired")
+
+CSP = ["Une seule fois","Plusieurs fois","Continuellement"] 
+
+data = round((data_discri.groupby(["DFREQ1C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+
+
+# Wedge properties
+wp = { 'edgecolor' : "black" }
+# 'linewidth' : 1,
+# Creating autocpt arguments
+def func(pct, allvalues):
+    absolute = int(pct / 100.*np.sum(allvalues))
+    return "{:.1f}%\n({:d} g)".format(pct, absolute)
+ 
+# Creating plot
+fig, ax = plt.subplots(figsize =(10, 7))
+wedges, texts, autotexts = ax.pie(data,
+                                  autopct = lambda pct: func(pct, data),
+                                  shadow = True,
+                                  colors = couleur,
+                                  startangle = 90,
+                                  wedgeprops = wp)
+#,                                  textprops = dict(color ="magenta"))
+ 
+# Adding legend
+ax.legend(wedges, CSP,
+          title ="CSP",
+          loc ="center left",
+          bbox_to_anchor =(1, 0, 0.5, 1))
+ 
+plt.setp(autotexts, size = 8, weight ="bold")
+ax.set_title("Fréquence discrimination subis par rapport à l'age en 2003")
+ 
+# show plot
+plt.show()
+
+-------------------------------------------------------------------------------
+#code 3
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 17:09:27 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 14:23:03 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python
+# coding: utf-8
+
+
+# In[1]:
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data = pd.read_csv(r'/Users/nacim-/Downloads/hdvaaa.csv', sep = ",")
+
+# In[2]:
+
+
+data_discri = data[data["DISCRI3C1"]>0]
+
+# In[3]:
+ 
+    
+
+CSP = ["Subis des moqueries, des insultes","mis à l'écart","traité(é) injustement", "refusé un droit"]
+ 
+data = round((data_discri.groupby(["DISCRI3C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+# In[2]:
+ 
+    
+couleur = sns.color_palette("Paired")
+
+CSP = ["Subis des moqueries, des insultes","mis à l'écart","traité(é) injustement", "refusé un droit"] 
+
+data = round((data_discri.groupby(["DISCRI3C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+
+
+# Wedge properties
+wp = { 'edgecolor' : "black" }
+# 'linewidth' : 1,
+# Creating autocpt arguments
+def func(pct, allvalues):
+    absolute = int(pct / 100.*np.sum(allvalues))
+    return "{:.1f}%\n({:d} g)".format(pct, absolute)
+ 
+# Creating plot
+fig, ax = plt.subplots(figsize =(10, 7))
+wedges, texts, autotexts = ax.pie(data,
+                                  autopct = lambda pct: func(pct, data),
+                                  shadow = True,
+                                  colors = couleur,
+                                  startangle = 90,
+                                  wedgeprops = wp)
+#,                                  textprops = dict(color ="magenta"))
+ 
+# Adding legend
+ax.legend(wedges, CSP,
+          title ="CSP",
+          loc ="center left",
+          bbox_to_anchor =(1, 0, 0.5, 1))
+ 
+plt.setp(autotexts, size = 8, weight ="bold")
+ax.set_title("Discrimination subis sur des personne en situation d'handicap en 2003")
+ 
+# show plot
+plt.show()
+
+-------------------------------------------------------------------------------
+#code 4
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 17:09:27 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 14:23:03 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python
+# coding: utf-8
+
+
+# In[1]:
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data = pd.read_csv(r'/Users/nacim-/Downloads/hdvaaa.csv', sep = ",")
+
+# In[2]:
+
+
+data_discri = data[data["DFREQ3C1"]>0]
+
+# In[3]:
+ 
+    
+
+CSP = ["Une seule fois","Plusieurs fois","Continuellement"]
+ 
+data = round((data_discri.groupby(["DFREQ3C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+# In[2]:
+ 
+    
+couleur = sns.color_palette("Paired")
+
+CSP = ["Une seule fois","Plusieurs fois","Continuellement"]
+
+data = round((data_discri.groupby(["DFREQ3C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+
+
+# Wedge properties
+wp = { 'edgecolor' : "black" }
+# 'linewidth' : 1,
+# Creating autocpt arguments
+def func(pct, allvalues):
+    absolute = int(pct / 100.*np.sum(allvalues))
+    return "{:.1f}%\n({:d} g)".format(pct, absolute)
+ 
+# Creating plot
+fig, ax = plt.subplots(figsize =(10, 7))
+wedges, texts, autotexts = ax.pie(data,
+                                  autopct = lambda pct: func(pct, data),
+                                  shadow = True,
+                                  colors = couleur,
+                                  startangle = 90,
+                                  wedgeprops = wp)
+#,                                  textprops = dict(color ="magenta"))
+ 
+# Adding legend
+ax.legend(wedges, CSP,
+          title ="CSP",
+          loc ="center left",
+          bbox_to_anchor =(1, 0, 0.5, 1))
+ 
+plt.setp(autotexts, size = 8, weight ="bold")
+ax.set_title("Fréquence discrimination subis sur des personnes en situation d'handicap en 2003")
+ 
+# show plot
+plt.show()
+
+-------------------------------------------------------------------------------
+#code 5
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 19:10:31 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 17:09:27 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 14:23:03 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python
+# coding: utf-8
+
+
+# In[1]:
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data = pd.read_csv(r'/Users/nacim-/Downloads/hdvaaa.csv', sep = ",")
+
+# In[2]:
+
+
+data_discri = data[data["DISCRI2C1"]>0]
+
+# In[3]:
+ 
+    
+
+CSP = ["Subis des moqueries, des insultes","mis à l'écart","traité(é) injustement", "refusé un droit"]
+
+data = round((data_discri.groupby(["DISCRI2C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+# In[2]:
+ 
+    
+couleur = sns.color_palette("Paired")
+
+CSP = ["Subis des moqueries, des insultes","mis à l'écart","traité(é) injustement", "refusé un droit"]
+
+data = round((data_discri.groupby(["DISCRI2C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+
+
+# Wedge properties
+wp = { 'edgecolor' : "black" }
+# 'linewidth' : 1,
+# Creating autocpt arguments
+def func(pct, allvalues):
+    absolute = int(pct / 100.*np.sum(allvalues))
+    return "{:.1f}%\n({:d} g)".format(pct, absolute)
+ 
+# Creating plot
+fig, ax = plt.subplots(figsize =(10, 7))
+wedges, texts, autotexts = ax.pie(data,
+                                  autopct = lambda pct: func(pct, data),
+                                  shadow = True,
+                                  colors = couleur,
+                                  startangle = 90,
+                                  wedgeprops = wp)
+#,                                  textprops = dict(color ="magenta"))
+ 
+# Adding legend
+ax.legend(wedges, CSP,
+          title ="CSP",
+          loc ="center left",
+          bbox_to_anchor =(1, 0, 0.5, 1))
+ 
+plt.setp(autotexts, size = 8, weight ="bold")
+ax.set_title("Discrimination à cause du sexe en 2003")
+ 
+# show plot
+plt.show()
+
+-------------------------------------------------------------------------------
+#code 6
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 19:11:09 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 17:09:27 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Dec  4 14:23:03 2022
+
+@author: nacim-
+"""
+
+#!/usr/bin/env python
+# coding: utf-8
+
+
+# In[1]:
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data = pd.read_csv(r'/Users/nacim-/Downloads/hdvaaa.csv', sep = ",")
+
+# In[2]:
+
+
+data_discri = data[data["DISCRI4C1"]>0]
+
+# In[3]:
+ 
+    
+CSP = ["Subis des moqueries, des insultes","mis à l'écart","traité(é) injustement", "refusé un droit"]
+
+ 
+data = round((data_discri.groupby(["DISCRI4C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+# In[2]:
+ 
+    
+couleur = sns.color_palette("Paired")
+
+CSP = ["Subis des moqueries, des insultes","mis à l'écart","traité(é) injustement", "refusé un droit"]
+
+data = round((data_discri.groupby(["DISCRI4C1"]).sum()["POIDSFN148"]/sum(data_discri["POIDSFN148"])*100),1)
+
+
+
+
+# Wedge properties
+wp = { 'edgecolor' : "black" }
+# 'linewidth' : 1,
+# Creating autocpt arguments
+def func(pct, allvalues):
+    absolute = int(pct / 100.*np.sum(allvalues))
+    return "{:.1f}%\n({:d} g)".format(pct, absolute)
+ 
+# Creating plot
+fig, ax = plt.subplots(figsize =(10, 7))
+wedges, texts, autotexts = ax.pie(data,
+                                  autopct = lambda pct: func(pct, data),
+                                  shadow = True,
+                                  colors = couleur,
+                                  startangle = 90,
+                                  wedgeprops = wp)
+#,                                  textprops = dict(color ="magenta"))
+ 
+# Adding legend
+ax.legend(wedges, CSP,
+          title ="CSP",
+          loc ="center left",
+          bbox_to_anchor =(1, 0, 0.5, 1))
+ 
+plt.setp(autotexts, size = 8, weight ="bold")
+ax.set_title("discrimination à cause de la couleurs de peau en 2003")
+ 
+# show plot
+plt.show()
+
